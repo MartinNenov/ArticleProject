@@ -1,4 +1,8 @@
-import { Directive, ViewContainerRef, Injector } from '@angular/core';
+import { Directive, ViewContainerRef, Injector, TemplateRef, Input } from '@angular/core';
+
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
+import {ySyncPlugin, yCursorPlugin, yUndoPlugin, undo, redo } from 'y-prosemirror'
 
 import { EditorState, Plugin } from "prosemirror-state"
 import { EditorView } from "prosemirror-view"
@@ -127,15 +131,24 @@ const blockMathInputRule = makeBlockMathInputRule(REGEX_BLOCK_MATH_DOLLARS, mySc
   selector: '[appEditor]'
 })
 export class EditorDirective {
+  ydoc = new Y.Doc()
+  provider = new WebrtcProvider('prosemirror-debug', this.ydoc)
+  type = this.ydoc.getXmlFragment('prosemirror')
 
   view = new EditorView(this.viewContainerRef.element.nativeElement, {
     state: EditorState.create({
       schema: mySchema,
       plugins: [
+        ySyncPlugin(this.type),
+        yCursorPlugin(this.provider.awareness),
+        yUndoPlugin(),
         mathPlugin,
         keymap({
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
           "Mod-Space": insertMathCmd(schema.nodes.math_inline),
-          //"Enter":chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
+          "Enter":chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
           // modify the default keymap chain for backspace
           "Backspace": chainCommands(deleteSelection, mathBackspaceCmd, joinBackward, selectNodeBackward),
         }),
@@ -167,9 +180,20 @@ export class EditorDirective {
       example: (node, nodeView, getPos) => new CustomView(node, nodeView, getPos, this.injector)
     }
   }); */
-
-  constructor(public viewContainerRef: ViewContainerRef, private injector: Injector) {
-
+  
+  constructor(private viewContainerRef: ViewContainerRef, private injector: Injector) {
+  }
+  @Input() set appEditor(btn:HTMLButtonElement){
+    btn.addEventListener('click',()=>{
+      if (this.provider.shouldConnect) {
+        this.provider.disconnect()
+        btn.textContent = 'Connect'
+      } else {
+        this.provider.connect()
+        btn.textContent = 'Disconnect'
+      }
+    })
   }
 
+  
 }
