@@ -1,10 +1,10 @@
-<div class="app">
-  Shared service click count is {{tds.value}}
+<div class="app" #editorContainer>
   <mat-card>
-    <button #btn1>Disconnect</button> 
+    <button #btn>Disconnect</button> 
     
-      <div [appEditor]="btn1">
+      <div [appEditor]="[btn,editorContainer]">
       </div>
     
   </mat-card>
 </div>
+<!-- <app-my-element></app-my-element> -->

@@ -1,15 +1,11 @@
 
 
-mat-card {
-    margin: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 400px;
-    border: 1px solid #fff;
+.app::before {
+    position: absolute;
+    transform: translateX(-2rem);
+    content: "app";
 }
 
-.selected {
-    border: 1px solid orange;
+.app {
+    margin: 2rem;
 }

@@ -1,10 +1,9 @@
-<mat-card [ngClass]="{ 'selected': selected$ | async }">
-    <p>I'm a custom element {{value}}</p>
-    <h1>{{tds.value}}</h1>
-    <p>
-      <button mat-button (click)="bump()">+</button>
-      <p>
-        <input type="number" matInput placeholder="Pick a number" value="22" #pickANumber>
-        <button mat-button (click)="save(+pickANumber.value)">save</button>
-      </p>
+<div class="app" #editorContainer>
+  <mat-card>
+    <button #btn1 (click)="btn(btn1)">Disconnect</button> 
+    
+      <div >
+      </div>
+    
   </mat-card>
+</div>
