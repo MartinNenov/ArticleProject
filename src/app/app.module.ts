@@ -12,6 +12,7 @@ import { ProsemirrorModule } from './prosemirror/prosemirror.module';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
+import { YjsProsemirrorService } from './services/yjs-prosemirror.service';
 
 
 @NgModule({
@@ -27,7 +28,8 @@ import { MatInputModule } from '@angular/material/input';
     MatCardModule,
     MatInputModule
   ],
-  providers: [],
+  providers: [
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

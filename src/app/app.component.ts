@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { YjsProsemirrorService } from './services/yjs-prosemirror.service';
 import { TestDataService } from './test-data.service';
 
 @Component({
@@ -10,6 +11,6 @@ export class AppComponent {
   title = 'angular-prosemirror';
 
   constructor(public tds: TestDataService) {
-
+    
   }
 }
