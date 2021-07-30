@@ -8,8 +8,8 @@ import * as pair from 'lib0/pair.js'
 import * as random from 'lib0/random.js'
 import { html, render } from 'lit-html'
 
-import { EditorState, Plugin } from "prosemirror-state"
-import { EditorView } from "prosemirror-view"
+import { EditorState, Plugin, Transaction } from "prosemirror-state"
+import { Decoration, EditorView } from "prosemirror-view"
 import { Schema, DOMParser, Node, Slice, NodeType } from "prosemirror-model"
 import { nodes,marks, } from "prosemirror-schema-basic"
 import { addListNodes } from "prosemirror-schema-list"
@@ -66,7 +66,8 @@ export class YjsProsemirrorService {
         content: "text*",        // important!
         atom: true,              // important!
         code: true,              // important!
-        toDOM: () => ["math-display", { class: "math-node",style:"border-radius: 16px;border: 1px solid #ccc" }, 0],
+        toDOM: () => {
+          return ["math-display", { class: "math-node" }, 0]},
         parseDOM: [{
           tag: "math-display"  // important!
         }]
@@ -331,13 +332,11 @@ export class YjsProsemirrorService {
       ]) */
     })
     let view = new EditorView(editorContainer, {
-
       state: edState,
       clipboardTextSerializer: (slice: Slice) => { return mathSerializer.serializeSlice(slice) },
       nodeViews: {
         example: (node, nodeView, getPos) => new CustomView(node, nodeView, getPos, this.injector)
       },
-      
     })
     renderer.appendChild(this.parentElement, editorContainer)
     renderer.appendChild(this.parentElement, connectionBTN)
