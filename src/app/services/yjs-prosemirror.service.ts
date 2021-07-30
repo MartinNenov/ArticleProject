@@ -1,4 +1,4 @@
-import {  Injector,  Injectable, Renderer2 } from '@angular/core';
+import { Injector, Injectable, Renderer2 } from '@angular/core';
 
 import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
@@ -10,8 +10,8 @@ import { html, render } from 'lit-html'
 
 import { EditorState, Plugin } from "prosemirror-state"
 import { EditorView } from "prosemirror-view"
-import { Schema, DOMParser, Node, Slice } from "prosemirror-model"
-import { schema } from "prosemirror-schema-basic"
+import { Schema, DOMParser, Node, Slice, NodeType } from "prosemirror-model"
+import { nodes,marks, } from "prosemirror-schema-basic"
 import { addListNodes } from "prosemirror-schema-list"
 import {
   makeBlockMathInputRule, makeInlineMathInputRule,
@@ -25,15 +25,17 @@ import { CustomView } from './custom-view';
 import { YArray } from 'yjs/dist/src/internals';
 import { Snapshot } from 'yjs';
 import { MenuView } from './menuView';
-import {toggleMark, setBlockType, wrapIn} from "prosemirror-commands"
+import { toggleMark, setBlockType, wrapIn } from "prosemirror-commands"
 
 @Injectable({
   providedIn: 'root',
 })
 
 export class YjsProsemirrorService {
+  
   mySchema = new Schema({
     nodes: {
+      ...nodes,
       doc: {
         content: "block+"
       },
@@ -64,7 +66,7 @@ export class YjsProsemirrorService {
         content: "text*",        // important!
         atom: true,              // important!
         code: true,              // important!
-        toDOM: () => ["math-display", { class: "math-node" }, 0],
+        toDOM: () => ["math-display", { class: "math-node",style:"border-radius: 16px;border: 1px solid #ccc" }, 0],
         parseDOM: [{
           tag: "math-display"  // important!
         }]
@@ -72,7 +74,8 @@ export class YjsProsemirrorService {
       text: {
         group: "inline"
       }
-    }
+    },
+    marks:marks
   });
   node = this.mySchema.node.bind(this.mySchema);
   text = this.mySchema.text.bind(this.mySchema);
@@ -81,7 +84,7 @@ export class YjsProsemirrorService {
   heading = this.mySchema.nodes.heading;
   inlineMathInputRule = makeInlineMathInputRule(REGEX_INLINE_MATH_DOLLARS, this.mySchema.nodes.math_inline);
   blockMathInputRule = makeBlockMathInputRule(REGEX_BLOCK_MATH_DOLLARS, this.mySchema.nodes.math_display);
-  
+
   ydoc = new Y.Doc()
   provider = new WebrtcProvider('prosemirror-debug', this.ydoc)
   type = this.ydoc.getXmlFragment('prosemirror')
@@ -99,7 +102,7 @@ export class YjsProsemirrorService {
       // account for the action of adding a version to ydoc
       prevSnapshot.sv.set(prevVersion.clientID, prevSnapshot.sv.get(prevVersion.clientID)! + 1)
     }
-    console.log(snapshot,Y.equalSnapshots(prevSnapshot, snapshot));
+    console.log(snapshot, Y.equalSnapshots(prevSnapshot, snapshot));
     if (!Y.equalSnapshots(prevSnapshot, snapshot)) {
       versions.push([{
         date: new Date().getTime(),
@@ -108,60 +111,60 @@ export class YjsProsemirrorService {
       }])
     }
   }
-  
+
   liveTracking = (dom.element('input', [
     pair.create('type', 'checkbox'),
     pair.create('name', 'yjs-live-tracking'),
     pair.create('value', 'Live Tracking ')
   ]) as HTMLInputElement)
-  
+
   updateLiveTrackingState = (editorstate: any) => {
     setTimeout(() => {
       const syncState = ySyncPluginKey.getState(editorstate.state)
       this.liveTracking.checked = syncState.prevSnapshot != null && syncState.snapshot == null
     }, 500)
   }
-  
+
   renderVersion = (editorview: EditorView, version: {
     date: number,
     snapshot: Uint8Array,
     clientID: number
-  }, prevSnapshot: Uint8Array|null) => {
+  }, prevSnapshot: Uint8Array | null) => {
     console.log(Y.decodeSnapshot(version.snapshot))
     editorview.dispatch(editorview.state.tr.setMeta(ySyncPluginKey, { snapshot: Y.decodeSnapshot(version.snapshot), prevSnapshot: prevSnapshot == null ? Y.emptySnapshot : Y.decodeSnapshot(prevSnapshot) }))
     this.updateLiveTrackingState(editorview)
   }
-  unrenderVersion = (editorview:EditorView) => {
+  unrenderVersion = (editorview: EditorView) => {
     const binding = ySyncPluginKey.getState(editorview.state).binding
     if (binding != null) {
       binding.unrenderSnapshot()
     }
     this.updateLiveTrackingState(editorview)
   }
-  versionTemplate = (editorview:EditorView, version:{
+  versionTemplate = (editorview: EditorView, version: {
     date: number,
     snapshot: Uint8Array,
     clientID: number
-  }, prevSnapshot:Uint8Array|null) => html`<div class="version-list" @click=${(e:any) => this.renderVersion(editorview, version, prevSnapshot)}>${new Date(version.date).toLocaleString()}</div>`
-  
-  versionList = (editorview:EditorView, doc:Y.Doc) => {
-    const versions:YArray<{
+  }, prevSnapshot: Uint8Array | null) => html`<div class="version-list" @click=${(e: any) => this.renderVersion(editorview, version, prevSnapshot)}>${new Date(version.date).toLocaleString()}</div>`
+
+  versionList = (editorview: EditorView, doc: Y.Doc) => {
+    const versions: YArray<{
       date: number,
       snapshot: Uint8Array,
       clientID: number
     }> = doc.getArray('versions')
-    return html`<div>${versions.length > 0 ? versions.map((version:{
+    return html`<div>${versions.length > 0 ? versions.map((version: {
       date: number,
       snapshot: Uint8Array,
       clientID: number
     }, i) => this.versionTemplate(editorview, version, i > 0 ? versions.get(i - 1).snapshot : null)) : html`<div>No snapshots..</div>`}</div>`
   }
-  
-  snapshotButton = (doc:Y.Doc) => {
-    return html`<button @click=${(e:any) => this.addVersion(doc)}>Snapshot</button>`
+
+  snapshotButton = (doc: Y.Doc) => {
+    return html`<button @click=${(e: any) => this.addVersion(doc)}>Snapshot</button>`
   }
-  
-  attachVersion = (parent:HTMLElement, doc:Y.Doc, editorview:EditorView) => {
+
+  attachVersion = (parent: HTMLElement, doc: Y.Doc, editorview: EditorView) => {
     let open = false
     const rerender = () => {
       render(html`<div class="version-modal" ?hidden=${open}>${this.snapshotButton(doc)}${this.versionList(editorview, doc)}</div>`, vContainer)
@@ -169,11 +172,11 @@ export class YjsProsemirrorService {
     this.updateLiveTrackingState(editorview)
     this.liveTracking.addEventListener('click', e => {
       if (this.liveTracking.checked) {
-        const versions :YArray<{
+        const versions: YArray<{
           date: number,
           snapshot: Uint8Array,
           clientID: number
-        }>= doc.getArray('versions')
+        }> = doc.getArray('versions')
         const lastVersion = versions.length > 0 ? Y.decodeSnapshot(versions.get(versions.length - 1).snapshot) : Y.emptySnapshot
         editorview.dispatch(editorview.state.tr.setMeta(ySyncPluginKey, { snapshot: null, prevSnapshot: lastVersion }))
       } else {
@@ -200,22 +203,22 @@ export class YjsProsemirrorService {
     doc.getArray('versions').observe(rerender)
     rerender()
   }
-  
+
   testUsers = [
     { username: 'Alice', color: '#ecd444', lightColor: '#ecd44433' },
     { username: 'Bob', color: '#ee6352', lightColor: '#ee635233' },
     { username: 'Max', color: '#6eeb83', lightColor: '#6eeb8333' }
   ]
-  
+
   colors = [
     { light: '#ecd44433', dark: '#ecd444' },
     { light: '#ee635233', dark: '#ee6352' },
     { light: '#6eeb8333', dark: '#6eeb83' }
   ]
 
-  menuPlugin(items:{command:Command,dom:HTMLElement}[]) {
+  menuPlugin(items: { command: Command, dom: HTMLElement }[]) {
     return new Plugin({
-      view(editorView:EditorView) {
+      view(editorView: EditorView) {
         let menuView = new MenuView(items, editorView)
         editorView?.dom?.parentNode?.insertBefore(menuView.dom, editorView.dom)
         return menuView
@@ -223,7 +226,7 @@ export class YjsProsemirrorService {
     })
   }
 
-  icon(text:string, name:string) {
+  icon(text: string, name: string) {
     let span = document.createElement("button")
     span.className = "menuicon " + name
     span.title = name
@@ -231,27 +234,51 @@ export class YjsProsemirrorService {
     return span
   }
 
-  headingMenu(level:number) {
+  headingMenu(level: number) {
     return {
-      command: setBlockType(schema.nodes.heading, {level}),
+      command: setBlockType(this.mySchema.nodes.heading, { level }),
       dom: this.icon("H" + level, "heading")
     }
   }
 
-  menu = this.menuPlugin([
-    {command: toggleMark(schema.marks.strong), dom: this.icon(" B |", "strong")},
-    {command: toggleMark(schema.marks.em), dom: this.icon(" i |", "em")},
-    {command: setBlockType(schema.nodes.paragraph), dom: this.icon(" p |", "paragraph")},
-    this.headingMenu(1), this.headingMenu(2), this.headingMenu(3),
-    {command: wrapIn(schema.nodes.blockquote), dom: this.icon(" > |", "blockquote")}
-  ])
   
+
   user = random.oneOf(this.testUsers)
-  parentElement:any
-  init(element:HTMLElement,renderer:Renderer2){
+  parentElement: any
+  init(element: HTMLElement, renderer: Renderer2) {
     console.log(element);
-    
+
+
+    /* let math_inline = new NodeType;
+    math_inline.name = "math_inline";
+    math_inline.spec = {               // important!
+      group: "inline math",
+      content: "text*",        // important!
+      inline: true,            // important!
+      atom: true,              // important!
+      toDOM: () => ["math-inline", { class: "math-node" }, 0],
+      parseDOM: [{
+        tag: "math-inline"   // important!
+      }]
+    }
+
+    let math_display = new NodeType;
+    math_display.name = "math_display";
+    math_display.spec = {              // important!
+      group: "block math",
+      content: "text*",        // important!
+      atom: true,              // important!
+      code: true,              // important!
+      toDOM: () => ["math-display", { class: "math-node" }, 0],
+      parseDOM: [{
+        tag: "math-display"  // important!
+      }]
+    }
+
+    this.mySchema.node(math_inline);
+    this.mySchema.node(math_display); */
     let connectionBTN = renderer.createElement('button');
+    connectionBTN.textContent = 'Disconnect'
     this.parentElement = renderer.createElement('dib');
     let editorContainer = renderer.createElement('div');
     connectionBTN.addEventListener('click', () => {
@@ -266,48 +293,58 @@ export class YjsProsemirrorService {
     let permanentUserData = new Y.PermanentUserData(this.ydoc)
     permanentUserData.setUserMapping(this.ydoc, this.ydoc.clientID, this.user.username)
     this.ydoc.gc = false
-    let colors = this.colors 
+    let colors = this.colors
+    let edState = EditorState.create({
+      schema: this.mySchema,
+      plugins: [
+
+        ySyncPlugin(this.type, { colors, permanentUserData }),
+        yCursorPlugin(this.provider.awareness),
+        yUndoPlugin(),
+        mathPlugin,
+        keymap({
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
+          "Mod-Space": insertMathCmd(this.mySchema.nodes.math_inline),
+          "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
+          // modify the default keymap chain for backspace
+          "Backspace": chainCommands(deleteSelection, mathBackspaceCmd, joinBackward, selectNodeBackward),
+        }),
+        inputRules({ rules: [this.inlineMathInputRule, this.blockMathInputRule] }),
+        this.menuPlugin([
+          { command: toggleMark(this.mySchema.marks.strong), dom: this.icon(" B ", "strong") },
+          { command: toggleMark(this.mySchema.marks.em), dom: this.icon(" i ", "em") },
+          { command: setBlockType(this.mySchema.nodes.paragraph), dom: this.icon(" p ", "paragraph") },
+          this.headingMenu(1), this.headingMenu(2), this.headingMenu(3),
+          { command: wrapIn(this.mySchema.nodes.blockquote), dom: this.icon(" > ", "blockquote") },
+          { command: setBlockType(this.mySchema.nodes.math_display), dom: this.icon("addMathBlock", "Math") },
+          //{ command: wrapIn(this.mySchema.nodes.math_inline), dom: this.icon("addMathInline", "Math") },
+        ])
+      ]/* .concat(exampleSetup({mySchema}))  ,
+      doc: node('doc', {}, [
+        this.heading.create({}, [this.text('Test document')]),
+        this.example.create({}, []), 
+        paragraph.create({}, [text('Some paragraph to drag after')]),
+        paragraph.create({}, [text('Some paragraph to drag after')]),
+        paragraph.create({}, [text('Some paragraph to drag after')])
+      ]) */
+    })
     let view = new EditorView(editorContainer, {
-      
-      state: EditorState.create({
-        schema: schema,
-        plugins: [
-          
-          ySyncPlugin(this.type, {  colors, permanentUserData}),
-          yCursorPlugin(this.provider.awareness),
-          yUndoPlugin(),
-          mathPlugin,
-          keymap({
-            'Mod-z': undo,
-            'Mod-y': redo,
-            'Mod-Shift-z': redo,
-            "Mod-Space": insertMathCmd(schema.nodes.math_inline),
-            "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
-            // modify the default keymap chain for backspace
-            "Backspace": chainCommands(deleteSelection, mathBackspaceCmd, joinBackward, selectNodeBackward),
-          }),
-          inputRules({ rules: [this.inlineMathInputRule, this.blockMathInputRule] }),
-          this.menu
-        ]/* .concat(exampleSetup({mySchema}))  ,
-        doc: node('doc', {}, [
-          this.heading.create({}, [this.text('Test document')]),
-          this.example.create({}, []), 
-          paragraph.create({}, [text('Some paragraph to drag after')]),
-          paragraph.create({}, [text('Some paragraph to drag after')]),
-          paragraph.create({}, [text('Some paragraph to drag after')])
-        ]) */
-      }),
-      clipboardTextSerializer: (slice:Slice) => { return mathSerializer.serializeSlice(slice) },
+
+      state: edState,
+      clipboardTextSerializer: (slice: Slice) => { return mathSerializer.serializeSlice(slice) },
       nodeViews: {
         example: (node, nodeView, getPos) => new CustomView(node, nodeView, getPos, this.injector)
-      }
+      },
+      
     })
-    renderer.appendChild(this.parentElement,editorContainer) 
-    renderer.appendChild(this.parentElement,connectionBTN) 
+    renderer.appendChild(this.parentElement, editorContainer)
+    renderer.appendChild(this.parentElement, connectionBTN)
     this.attachVersion(this.parentElement, this.ydoc, view)
-    renderer.appendChild(element,this.parentElement);
-    
+    renderer.appendChild(element, this.parentElement);
+
   }
-  constructor(private injector : Injector) {
+  constructor(private injector: Injector) {
   }
 }
