@@ -29,6 +29,7 @@ import { YjsProsemirrorService } from './services/yjs-prosemirror.service';
     MatInputModule
   ],
   providers: [
+    YjsProsemirrorService
   ],
   bootstrap: [AppComponent]
 })
