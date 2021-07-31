@@ -5,6 +5,7 @@ import * as dom from 'lib0/dom.js'
 import * as pair from 'lib0/pair.js'
 import { ySyncPluginKey } from 'y-prosemirror'
 import { html, render } from 'lit-html'
+import { ColorDef } from 'y-prosemirror/dist/src/plugins/sync-plugin'
 
 
 function addVersion(doc: Y.Doc): void {
@@ -128,7 +129,7 @@ let testUsers = [
     { username: 'Max', color: '#6eeb83', lightColor: '#6eeb8333' }
 ]
 
-let colors = [
+let colors:ColorDef[] = [
     { light: '#ecd44433', dark: '#ecd444' },
     { light: '#ee635233', dark: '#ee6352' },
     { light: '#6eeb8333', dark: '#6eeb83' }

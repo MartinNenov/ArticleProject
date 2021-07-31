@@ -14,3 +14,19 @@ math-display{
     border: 1px solid #ccc;
     border-radius: 16px;
 }
+
+.container{
+    display:inline-block;
+    min-height: 400px;
+    top:0;
+}
+
+.editorContainer{
+    width: 50%;
+    position: absolute;
+}
+
+.commentsContainer{
+    width: 30%;
+    margin-left: 60%;
+}

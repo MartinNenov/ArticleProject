@@ -1,15 +1,16 @@
 import { Injector, Injectable, Renderer2 } from '@angular/core';
 import * as verTrFunc from './versionTrackingFunctions'
+import {AddCommentDialogComponent} from '../add-comment-dialog/add-comment-dialog.component'
 
 import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
-import { ySyncPlugin, yCursorPlugin, yUndoPlugin, undo, redo} from 'y-prosemirror'
+import { SignalingConn, WebrtcProvider } from 'y-webrtc';
+import { ySyncPlugin, yCursorPlugin, yUndoPlugin, undo, redo } from 'y-prosemirror'
 import * as random from 'lib0/random.js'
 import * as awarenessProtocol from 'y-protocols/awareness.js'
 
-import { EditorState, Plugin, Transaction } from "prosemirror-state"
-import {EditorView } from "prosemirror-view"
-import { Slice, } from "prosemirror-model"
+import { EditorState, Transaction } from "prosemirror-state"
+import { EditorView } from "prosemirror-view"
+import { NodeType, Slice, } from "prosemirror-model"
 import {
   makeBlockMathInputRule, makeInlineMathInputRule,
   REGEX_INLINE_MATH_DOLLARS, REGEX_BLOCK_MATH_DOLLARS
@@ -19,9 +20,13 @@ import { chainCommands, deleteSelection, selectNodeBackward, joinBackward, Comma
 import { keymap } from "prosemirror-keymap";
 import { inputRules, } from "prosemirror-inputrules";
 import { CustomView } from './custom-view';
-import { MenuView, menuPlugin,icon,headingMenu } from './menuView';
+import { MenuView, menuPlugin, icon, headingMenu } from './menuView';
 import { toggleMark, setBlockType, wrapIn } from "prosemirror-commands"
 import { mySchema } from './schema';
+import { Http2SecureServer } from 'http2';
+import { Observable } from 'rxjs';
+import { ColorDef } from 'y-prosemirror/dist/src/plugins/sync-plugin';
+import { MatDialog } from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root',
@@ -43,22 +48,41 @@ export class YjsProsemirrorService {
   })
   type = this.ydoc.getXmlFragment('prosemirror')
   versions = this.ydoc.getArray('versions');
-  
 
-  
+
+
   user = random.oneOf(verTrFunc.testUsers)
+  color = random.oneOf(verTrFunc.colors)
   parentElement: any
+  constructor(private injector: Injector) { 
+    
+  }
 
-  init(element: HTMLElement, renderer: Renderer2) {
+  
+
+  printSelention(commentsContainer:any): Command {
+    
+    return function (editorstate: EditorState,dispatch?:(tr:Transaction)=>void): boolean {
+      let { $from, $to ,empty} = editorstate.selection
+      if($from ==$to || empty) return true
+      if(dispatch){
+        console.log($from.pos, $to.pos);
+        console.log(editorstate.selection);
+        
+      }
+      return true;
+    }
+  }
+  init(element: HTMLElement,commentsContainer:any, renderer: Renderer2) {
     let emitBtn = document.createElement('button')
     emitBtn.textContent = 'emit';
+    let signalingConn: SignalingConn = this.provider.signalingConns.find(el => el.url == "ws://localhost:4444")
     emitBtn.addEventListener('click', () => {
-      this.provider.emit('emit', ['asd'])
+      signalingConn.send('asdasdasdasd')
     })
-    console.log(element);
 
 
-    
+
     let connectionBTN = renderer.createElement('button');
     connectionBTN.textContent = 'Disconnect'
     this.parentElement = renderer.createElement('dib');
@@ -72,6 +96,7 @@ export class YjsProsemirrorService {
         connectionBTN.textContent = 'Disconnect'
       }
     })
+    let colorMapping: Map<string, ColorDef> = new Map([[this.user.username, this.color],]);
     let permanentUserData = new Y.PermanentUserData(this.ydoc)
     permanentUserData.setUserMapping(this.ydoc, this.ydoc.clientID, this.user.username)
     this.ydoc.gc = false
@@ -80,7 +105,7 @@ export class YjsProsemirrorService {
       schema: mySchema,
       plugins: [
 
-        ySyncPlugin(this.type, { colors, permanentUserData }),
+        ySyncPlugin(this.type, { colors, colorMapping, permanentUserData }),
         yCursorPlugin(this.provider.awareness),
         yUndoPlugin(),
         mathPlugin,
@@ -92,6 +117,7 @@ export class YjsProsemirrorService {
           "Enter": chainCommands(newlineInCode, createParagraphNear, liftEmptyBlock, splitBlock),
           // modify the default keymap chain for backspace
           "Backspace": chainCommands(deleteSelection, mathBackspaceCmd, joinBackward, selectNodeBackward),
+          //"Ctrl-Alt-c": chainCommands(this.printSelention),
         }),
         inputRules({ rules: [this.inlineMathInputRule, this.blockMathInputRule] }),
         menuPlugin([
@@ -101,6 +127,8 @@ export class YjsProsemirrorService {
           headingMenu(1), headingMenu(2), headingMenu(3),
           { command: wrapIn(mySchema.nodes.blockquote), dom: icon(" > ", "blockquote") },
           { command: setBlockType(mySchema.nodes.math_display), dom: icon("addMathBlock", "Math") },
+          { command: insertMathCmd(mySchema.nodes.math_inline), dom: icon("addMAthInline", "Math inline") },
+          { command: this.printSelention(commentsContainer), dom: icon("comment", "Add a comment") },
         ])
       ]
     })
@@ -118,6 +146,5 @@ export class YjsProsemirrorService {
     renderer.appendChild(element, emitBtn);
 
   }
-  constructor(private injector: Injector) {
-  }
+  
 }

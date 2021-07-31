@@ -1,9 +1,10 @@
-<div class="app" #editorContainer>
-  <mat-card>
-    
-      <div appEditor>
+<div class="app" class="container editorContainer">
+    <mat-card >
+      <div [appEditor]='commentsContainer' class="editor">
       </div>
-    
+    </mat-card>
+  </div>
+  <mat-card #commentsContainer class="container commentsContainer">
+    <div  > Comments </div>
   </mat-card>
-</div>
 <!-- <app-my-element></app-my-element> -->

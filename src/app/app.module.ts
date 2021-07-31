@@ -13,12 +13,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { YjsProsemirrorService } from './services/yjs-prosemirror.service';
+import { AddCommentDialogComponent } from './add-comment-dialog/add-comment-dialog.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import { FormsModule } from '@angular/forms';
 
 
 @NgModule({
   declarations: [
     AppComponent,
     MyElementComponent,
+    AddCommentDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -26,7 +30,9 @@ import { YjsProsemirrorService } from './services/yjs-prosemirror.service';
     BrowserAnimationsModule,
     MatButtonModule,
     MatCardModule,
-    MatInputModule
+    MatInputModule,
+    MatDialogModule,
+    FormsModule
   ],
   providers: [
     YjsProsemirrorService

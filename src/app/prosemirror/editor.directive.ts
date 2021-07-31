@@ -11,6 +11,9 @@ export class EditorDirective {
     private injector: Injector,
     public yjsPMService: YjsProsemirrorService,
     private renderer: Renderer2) {
-    yjsPMService.init(this.viewContainerRef.element.nativeElement, renderer);
+    }
+    @Input() set appEditor(commentsContainer:any){
+    this.yjsPMService.init(this.viewContainerRef.element.nativeElement,commentsContainer, this.renderer);
+
   }
 }
