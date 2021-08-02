@@ -35,7 +35,8 @@ import { FormsModule } from '@angular/forms';
     FormsModule
   ],
   providers: [
-    YjsProsemirrorService
+    YjsProsemirrorService,
+    { provide: Window, useValue: window }
   ],
   bootstrap: [AppComponent]
 })

@@ -28,6 +28,11 @@ import { Observable } from 'rxjs';
 import { ColorDef } from 'y-prosemirror/dist/src/plugins/sync-plugin';
 import { MatDialog } from '@angular/material/dialog';
 import { render } from 'katex';
+import {exampleSetup} from '../prosemirror/prosemirror-example-setup-ts'
+import { schema } from '../prosemirror/prosemirror-example-setup-ts/schema';
+import {commentPlugin, commentUI, addAnnotation, annotationIcon} from "./prosemirror-example/comments";
+import { Comment } from '@angular/compiler';
+
 
 @Injectable({
   providedIn: 'root',
@@ -55,8 +60,9 @@ export class YjsProsemirrorService {
   user = random.oneOf(verTrFunc.testUsers)
   color = random.oneOf(verTrFunc.colors)
   parentElement: any
+  examleLoadedplugins :any
   constructor(private injector: Injector) {
-
+    this.examleLoadedplugins = exampleSetup({...mySchema,menuBar:false,history:false});
   }
 
 
@@ -125,11 +131,9 @@ export class YjsProsemirrorService {
           data: { name: 'asdasd', comment: id }
         });
         dialogRef.afterClosed().subscribe((result: any) => {
-          console.log('The dialog was closed');
           id = result;
           
           if(atrKey == 'commentsid'){
-            console.log(true);
             return toggleMark(mySchema.marks.comment, {commentsid:id})(editorstate, dispatch)
           }
           return toggleMark(mySchema.marks.id, {id:id})(editorstate, dispatch)
@@ -139,16 +143,23 @@ export class YjsProsemirrorService {
     }
   }
 
-  displayDoc():Command{
+  displayDoc(str?:string):Command{
     return function (editorstate: EditorState, dispatch?: (tr: Transaction) => void): boolean {
       let { $from, $to, empty } = editorstate.selection
       if ($from == $to || empty) return true
       if (dispatch) {
+        if(str){
+          console.log(editorstate);
+          return true
+        }
         const fragment = DOMSerializer.fromSchema(editorstate.schema).serializeFragment(editorstate.doc.content);
 	      const div = document.createElement("div");
 	      div.appendChild(fragment);
-	      console.log(div.innerHTML);
-        console.log(editorstate.doc);
+	      //console.log(div.innerHTML);
+        console.log(editorstate.doc.toString());
+        console.log(editorstate.doc.text);
+        console.log(editorstate.doc.toJSON);
+        console.log(editorstate.doc.content);
         document.body.appendChild(div)
       }
       return true;
@@ -183,6 +194,9 @@ export class YjsProsemirrorService {
     permanentUserData.setUserMapping(this.ydoc, this.ydoc.clientID, this.user.username)
     this.ydoc.gc = false
     let colors = verTrFunc.colors
+    function dispatch(transaction:Transaction) {
+      edState.apply(transaction)
+    }
     let edState = EditorState.create({
       schema: mySchema,
       plugins: [
@@ -202,6 +216,8 @@ export class YjsProsemirrorService {
           //"Ctrl-Alt-c": chainCommands(this.printSelention),
         }),
         inputRules({ rules: [this.inlineMathInputRule, this.blockMathInputRule] }),
+        commentPlugin,
+        commentUI((transaction:Transaction) => dispatch(transaction)),
         menuPlugin([
           { command: toggleMark(mySchema.marks.strong), dom: icon(" B ", "strong") },
           { command: toggleMark(mySchema.marks.em), dom: icon(" i ", "em") },
@@ -213,10 +229,12 @@ export class YjsProsemirrorService {
           { command: this.printSelention(matdialog, componentsContainer), dom: icon("comment", "Add a comment") },
           { command: this.addHref(matdialog), dom: icon("addHref", "attach an href to the curent selection") },
           { command: this.addId(matdialog), dom: icon("addId", "attach an id to the curent selection") },
+          { command: addAnnotation, dom: icon("RealComent", "attach anotation") },
+          { command: this.displayDoc('clg'), dom: icon("DisplayRealComent", "attach anotation") },
           { command: this.addId(matdialog,'commentsid'), dom: icon("attachcomment", "attach an id to the curent selection") },
           { command: this.displayDoc(), dom: icon("display", "attach an id to the curent selection") },
         ])
-      ]
+      ]/* .concat(this.examleLoadedplugins) */
     })
     let view = new EditorView(editorContainer, {
       state: edState,
@@ -225,9 +243,9 @@ export class YjsProsemirrorService {
         example: (node, nodeView, getPos) => new CustomView(node, nodeView, getPos, this.injector)
       },
     })
-    /* emitBtn.addEventListener('click', () => {
-      view.setProps()
-    }) */
+    emitBtn.addEventListener('click', () => {
+      
+    })
     renderer.appendChild(this.parentElement, editorContainer)
     renderer.appendChild(this.parentElement, connectionBTN)
     verTrFunc.attachVersion(this.parentElement, this.ydoc, view)

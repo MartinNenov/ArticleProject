@@ -69,6 +69,7 @@ let mySchema = new Schema({
   }
 });
 
+
 let node = mySchema.node.bind(mySchema);
 let text = mySchema.text.bind(mySchema);
 let example = mySchema.nodes.example;
