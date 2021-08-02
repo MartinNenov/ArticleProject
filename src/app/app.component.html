@@ -1,10 +1,11 @@
 <div class="app" class="container editorContainer">
     <mat-card >
-      <div [appEditor]='commentsContainer' class="editor">
+      <div [appEditor]='{MatDialog:dialog,commentsContainer:commentsContainer}' class="editor">
       </div>
     </mat-card>
   </div>
-  <mat-card #commentsContainer class="container commentsContainer">
-    <div  > Comments </div>
+  <mat-card  class="container commentsContainer">
+    <div  > Comments </div><button (click)="displayComments()">DisplayComment</button>
+    <div #commentsContainer>{{comments}}</div>
   </mat-card>
 <!-- <app-my-element></app-my-element> -->

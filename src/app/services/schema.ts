@@ -47,7 +47,25 @@ let mySchema = new Schema({
     }
   },
   marks: {
-    ...marks
+    ...marks,
+    link: {
+      attrs: {href: {}},
+      toDOM(node) { return ["a", {href: node.attrs.href}, 0] },
+      parseDOM: [{tag: "a", getAttrs(dom:any) { return {href: dom.href} }}],
+      inclusive: false
+    },
+    id:{
+      attrs: {id: {}},
+      toDOM(node) { return ["strong", {id: node.attrs.id}, 0] },
+      parseDOM: [{tag: "strong", getAttrs(dom:any) { return {id: dom.id} }}],
+      inclusive: false
+    },
+    comment:{
+      attrs: {commentsid: {}},
+      toDOM(node) { return ["comment", {id: node.attrs.commentsid}, 0] },
+      parseDOM: [{tag: "comment", getAttrs(dom:any) { return {commentsid: dom.id} }}],
+      inclusive: false
+    }
   }
 });
 

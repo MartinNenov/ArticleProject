@@ -1,4 +1,5 @@
 import { Directive, ViewContainerRef, Injector, TemplateRef, Input, Renderer2 } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 
 import { YjsProsemirrorService } from '../services/yjs-prosemirror.service';
 
@@ -12,8 +13,8 @@ export class EditorDirective {
     public yjsPMService: YjsProsemirrorService,
     private renderer: Renderer2) {
     }
-    @Input() set appEditor(commentsContainer:any){
-    this.yjsPMService.init(this.viewContainerRef.element.nativeElement,commentsContainer, this.renderer);
+    @Input() set appEditor(asd:{MatDialog:MatDialog,commentsContainer:HTMLDivElement}){
+    this.yjsPMService.init(this.viewContainerRef.element.nativeElement,asd.MatDialog,asd.commentsContainer, this.renderer);
 
   }
 }
